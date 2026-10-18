@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#060b1b">
+  <meta name="description" content="日時と場所を変えて星空を探索。GitHub Pagesだけで動く、自分だけのプラネタリウム。">
+  <title>HOSHIZORA | 自分だけのプラネタリウム</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand"><span class="brand-icon" aria-hidden="true">✦</span><span class="brand-type">HOSHIZORA <small>星空ラボ</small></span></div>
+      <div class="top-note"><span class="top-pulse"></span> REAL SKY SIMULATOR <span class="top-sep">/</span> <span id="top-location">東京</span></div>
+      <button id="now-header" class="top-live" type="button">◎ <span>現在時刻に戻す</span></button>
+    </header>
+
+    <main class="workspace">
+      <aside class="sidebar" aria-label="観測条件の設定">
+        <div class="eyebrow">YOUR OBSERVATORY <span class="eyebrow-line"></span> 01</div>
+        <h1>星空を、<br><em>自由に旅しよう。</em></h1>
+        <p class="intro">見上げる場所と時間を変えるだけで、空の表情はこんなに変わる。</p>
+        <div class="section-title"><span>観測場所</span><small>LOCATION</small></div>
+        <div class="select-wrap"><span class="field-icon">⌖</span><select id="city-select" aria-label="観測場所"><option value="tokyo">東京 · Japan</option><option value="osaka">大阪 · Japan</option><option value="sapporo">札幌 · Japan</option><option value="okinawa">那覇 · Japan</option><option value="kyoto">京都 · Japan</option><option value="london">ロンドン · UK</option><option value="newyork">ニューヨーク · USA</option><option value="sydney">シドニー · Australia</option><option value="custom">カスタム地点</option></select><span class="select-arrow">⌄</span></div>
+        <button id="gps-btn" class="ghost-button" type="button">⌖ 現在地から観測する <span>→</span></button>
+        <div class="coordinate-row"><span id="coords">35.68° N / 139.69° E</span><button id="edit-coords" type="button" aria-expanded="false">座標を編集</button></div>
+        <div id="custom-coords" class="coords-edit" hidden><label>緯度 <input id="lat-input" type="number" min="-90" max="90" step="0.0001" value="35.6812"></label><label>経度 <input id="lon-input" type="number" min="-180" max="180" step="0.0001" value="139.6917"></label><button id="apply-coords" type="button">この座標を適用</button></div>
+
+        <div class="section-title date-section"><span>観測日時</span><small>DATE & TIME</small></div>
+        <label class="input-shell"><span class="field-icon">◷</span><input id="date-time" type="datetime-local" aria-label="観測日時"></label>
+        <div class="date-hint">日時は使用端末のタイムゾーンで指定します</div>
+        <div class="time-steps"><button id="minus-day" type="button">−1日</button><button id="minus-hour" type="button">−1時間</button><button id="plus-hour" type="button">+1時間</button><button id="plus-day" type="button">+1日</button></div>
+        <div class="time-buttons"><button id="tonight-btn" type="button" class="primary-soft">☾ 今夜21時</button><button id="animate-btn" type="button" class="secondary-soft">▶ 時間を進める</button></div>
+
+        <div class="section-title settings-section"><span>表示設定</span><small>DISPLAY</small></div>
+        <label class="switch-row"><span><b>星座の線</b><small>星座のつながりを表示</small></span><input id="toggle-lines" type="checkbox" checked><span class="toggle" aria-hidden="true"></span></label>
+        <label class="switch-row"><span><b>星の名前</b><small>明るい星をラベル表示</small></span><input id="toggle-labels" type="checkbox" checked><span class="toggle" aria-hidden="true"></span></label>
+        <label class="switch-row"><span><b>惑星と月</b><small>太陽系の天体を表示</small></span><input id="toggle-planets" type="checkbox" checked><span class="toggle" aria-hidden="true"></span></label>
+        <label class="switch-row"><span><b>方位・高度グリッド</b><small>空の目盛りを表示</small></span><input id="toggle-grid" type="checkbox" checked><span class="toggle" aria-hidden="true"></span></label>
+        <div class="magnitude"><div class="magnitude-head"><span>表示する星の明るさ</span><b id="mag-value">5.0 等級まで</b></div><input id="magnitude" type="range" min="1" max="6" value="5" step="0.5"><div class="scale"><span>明るい星だけ</span><span>より多くの星</span></div></div>
+        <p class="data-source" id="catalog-status">主な恒星を約120個収録。詳細な星表を読み込み中…</p>
+      </aside>
+
+      <section class="sky-column" aria-label="星空シミュレーター">
+        <div class="sky-header">
+          <div><div class="eyebrow sky-eyebrow">THE SKY ABOVE YOU</div><div class="sky-title">あなたの空、いまこの瞬間。</div></div>
+          <div class="sky-header-meta"><span class="sky-header-dot"></span><span id="view-time">—</span></div>
+        </div>
+        <div class="sky-area" id="sky-area">
+          <div class="sky-noise"></div>
+          <div class="sky-halo halo-one"></div><div class="sky-halo halo-two"></div>
+          <canvas id="sky" role="img" aria-label="星空を円形の全天図で描画。北が上、東が右、天頂が中央です。星をクリックすると解説が表示されます。"></canvas>
+          <div class="sky-annotation top">ZENITH <span>天頂</span></div>
+          <div class="sky-annotation bottom">HORIZON · 地平線</div>
+          <div id="sky-hint" class="sky-hint">✧ 星をクリックすると詳しく見られます</div>
+          <div class="zoom-tools"><button id="zoom-out" type="button" aria-label="縮小">−</button><span id="zoom-label">100%</span><button id="zoom-in" type="button" aria-label="拡大">+</button></div>
+          <div class="compass-hint" id="compass-hint">DRAG TO ROTATE ↔</div>
+        </div>
+        <div class="sky-footer"><div class="footer-item"><span class="footer-dot teal"></span><span id="sky-conditions">空の状態を計算しています…</span></div><div class="footer-item"><span class="footer-dot purple"></span><span>星空は天体計算によるシミュレーションです</span></div></div>
+        <div class="bottom-actions"><button id="reset-bearing" type="button">↗ 北を上に戻す</button><button id="save-image" type="button">↓ 星空を画像で保存</button></div>
+      </section>
+
+      <aside class="insights" aria-label="今夜の見どころと天体情報">
+        <div class="right-eyebrow">OBSERVATION GUIDE <span>02</span></div>
+        <div class="right-title">今夜の見どころ <span>✦</span></div>
+        <p class="right-desc">この場所・この時間に見つけられる天体。</p>
+        <div id="highlight-list" class="highlight-list"><div class="empty-object">空の情報を計算しています…</div></div>
+        <div class="selection-card" id="selection-card"><div class="selection-top">SELECTED OBJECT <span>✧</span></div><h3 id="selected-name">星を選んでみよう</h3><p id="selected-desc">星空の明るい点をクリックすると、星の名前や高度・方角を確認できます。</p><div id="selected-metrics" class="metrics"><div><span>高度</span><b>—</b></div><div><span>方位</span><b>—</b></div></div></div>
+        <div class="fact-card"><div class="fact-label">DID YOU KNOW? <span>☼</span></div><div class="fact-title" id="fact-title">星はどうして動くの？</div><p id="fact-text">地球が自転しているため、夜空の星は時間とともに東から西へ動いて見えます。</p><button id="next-fact" type="button">ほかの豆知識を見る →</button></div>
+        <div class="right-bottom">Made for curious minds · HOSHIZORA v1.0</div>
+      </aside>
+    </main>
+    <footer class="page-footer"><span>HOSHIZORA — あなたの手のひらに、小さな宇宙。</span><span>GitHub Pagesで無料公開できるオープンな静的Webアプリ · <a href="https://github.com/" target="_blank" rel="noopener">GitHub</a></span></footer>
+  </div>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <script src="astro.js"></script>
+  <script src="stars.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
